@@ -24,14 +24,14 @@ namespace acme_order
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDiscoveryClient(Configuration);
+            // services.AddDiscoveryClient(Configuration);
             services.AddMongoClient(Configuration);
-            
+
             services.Configure<OrderDatabaseSettings>(
-            Configuration.GetSection(nameof(OrderDatabaseSettings)));
+                Configuration.GetSection(nameof(OrderDatabaseSettings)));
 
             services.AddSingleton<IOrderDatabaseSettings>(sp =>
-            sp.GetRequiredService<IOptions<OrderDatabaseSettings>>().Value);
+                sp.GetRequiredService<IOptions<OrderDatabaseSettings>>().Value);
 
             services.AddSingleton<OrderService>();
             services.AddControllers();
@@ -47,10 +47,7 @@ namespace acme_order
 
             app.UseHttpsRedirection();
             app.UseRouting();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }

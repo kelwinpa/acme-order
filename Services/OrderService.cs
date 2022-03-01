@@ -10,17 +10,15 @@ namespace acme_order.Services
         private readonly IMongoCollection<Order> _orders;
 
         // <snippet_BookServiceConstructor>
-        public OrderService(IOrderDatabaseSettings settings)
+        public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
         {
-            var client = new MongoClient(settings.ConnectionString);
-            var database = client.GetDatabase(settings.DatabaseName);
-
+            var database = mongoClient.GetDatabase(settings.DatabaseName);
             _orders = database.GetCollection<Order>(settings.OrdersCollectionName);
         }
         // </snippet_BookServiceConstructor>
 
         public List<Order> Get() =>
-            _orders.Find(Order => true).ToList();
+            _orders.Find(order => true).ToList();
 
         public Order Get(string id) =>
             _orders.Find<Order>(order => order.Id == id).FirstOrDefault();
