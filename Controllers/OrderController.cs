@@ -70,5 +70,14 @@ namespace acme_order.Controllers
 
             return NoContent();
         }
+    
+        [HttpPost("add/{userid:length(24)}", Name = "CreateOrder")]
+        public ActionResult<Order> Create(string userid, Order orderIn)
+        {
+            _orderService.Create(userid, orderIn);
+            
+            return NoContent();
+        }
     }
+
 }

@@ -1,21 +1,27 @@
+using System;
 using acme_order.Models;
 using MongoDB.Driver;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace acme_order.Services
 {
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orders;
+        
+        private static readonly HttpClient client = new HttpClient();
+        
+        private static Random random = new Random();
 
-        // <snippet_BookServiceConstructor>
         public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
         {
             var database = mongoClient.GetDatabase(settings.DatabaseName);
             _orders = database.GetCollection<Order>(settings.OrdersCollectionName);
         }
-        // </snippet_BookServiceConstructor>
 
         public List<Order> Get() =>
             _orders.Find(order => true).ToList();
@@ -35,7 +41,97 @@ namespace acme_order.Services
         public void Remove(Order orderIn) =>
             _orders.DeleteOne(order => order.Id == orderIn.Id);
 
-        public void Remove(string id) => 
+        public void Remove(string id) =>
             _orders.DeleteOne(order => order.Id == id);
+
+
+        public void Create(string userid, Order orderIn)
+        {
+            var orderId = 0;
+            var paymentup = 0; //this variable is created to check if payment sevice is alive.x^
+
+            Order order = new Order();
+            order.Id = Guid.NewGuid().ToString();
+            order.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
+            order.Paid = "pending";
+            order.Userid = userid;
+            
+            order.Firstname = orderIn.Firstname;
+            order.Lastname = orderIn.Lastname;
+            order.Total = orderIn.Total;
+            order.Address = orderIn.Address;
+            order.Email = orderIn.Email;
+            order.Delivery = orderIn.Delivery;
+            order.Card = orderIn.Card;
+            order.Cart = orderIn.Cart;
+
+            orderIn.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
+            orderIn.Paid = "pending";
+            var transactionId = "pending";
+
+            var paymentres = new { };
+            
+            var paymentLoad = new PaymentLoad
+                (orderIn.Card,
+                orderIn.Firstname,
+                orderIn.Lastname,
+                orderIn.Address,
+                orderIn.Total);
+
+            makePayment(paymentLoad);
+        }
+
+        private Paymentres makePayment(PaymentLoad paymentLoad)
+        {
+            var transactionId = RandomString();
+            return new Paymentres("true", "payment successfully",paymentLoad.Total,transactionId);
+        }
+        
+        private struct PaymentLoad
+        {
+            public PaymentLoad(string card, string firstname, string lastname, string address, string total)
+            {
+                _card = card;
+                _firstname = firstname;
+                _lastname = lastname;
+                _address = address;
+                Total = total;
+            }
+
+            private string _card;
+            private string _firstname;
+            private string _lastname;
+            private string _address;
+            public string Total{ get; }
+
+        }
+        
+        
+        private struct Paymentres
+        {
+            public Paymentres(string success, string message, string amount, string transactionId)
+            {
+                _success = success;
+                _message = message;
+                _amount = amount;
+                _transactionId = transactionId;
+            }
+
+            private string _success;
+            private string _message;
+            private string _amount;
+            private string _transactionId;
+        }
+        
+        private static string RandomString()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, 16)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+        
     }
+
+
+    
 }

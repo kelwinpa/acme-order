@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Steeltoe.Connector.MongoDb;
-using Steeltoe.Discovery.Client;
 using acme_order.Models;
 using acme_order.Services;
 

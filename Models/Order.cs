@@ -12,17 +12,16 @@ namespace acme_order.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
         public string Date { get; set; }
-        public string paid { get; set; }
-        public string userid  { get; set; }
-        public string firstname  { get; set; }
-        public string  lastname { get; set; }
-        public string  total  { get; set; }    
-        //public string  address = Column(JSONB)
-        public string  email  { get; set; }
-        public string  delivery  { get; set; }
-        // card=Column(JSONB)
-        
-        // cart=Column(JSONB)
+        public string Paid { get; set; }
+        public string Userid  { get; set; }
+        public string Firstname  { get; set; }
+        public string Lastname { get; set; }
+        public string Total  { get; set; }
+        public string Address { get; set; }    
+        public string Email { get; set; }
+        public string  Delivery { get; set; }
+        public string Card { get; set; }
+        public string Cart { get; set; }    
 
     }
 }
