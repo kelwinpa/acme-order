@@ -47,9 +47,6 @@ namespace acme_order.Services
 
         public void Create(string userid, Order orderIn)
         {
-            var orderId = 0;
-            var paymentup = 0; //this variable is created to check if payment sevice is alive.x^
-
             Order order = new Order();
             order.Id = Guid.NewGuid().ToString();
             order.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
@@ -68,17 +65,21 @@ namespace acme_order.Services
             orderIn.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
             orderIn.Paid = "pending";
             var transactionId = "pending";
-
-            var paymentres = new { };
-            
             var paymentLoad = new PaymentLoad
                 (orderIn.Card,
                 orderIn.Firstname,
                 orderIn.Lastname,
                 orderIn.Address,
                 orderIn.Total);
+            
+            _orders.InsertOne(order);
+            var paymentres = makePayment(paymentLoad);
 
-            makePayment(paymentLoad);
+            if (string.IsNullOrEmpty(order.Id))
+            {
+                
+            }
+            
         }
 
         private Paymentres makePayment(PaymentLoad paymentLoad)
