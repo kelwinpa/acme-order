@@ -4,17 +4,14 @@ using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+using acme_order.Response;
 
 namespace acme_order.Services
 {
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orders;
-        
-        private static readonly HttpClient client = new HttpClient();
-        
+
         private static Random random = new Random();
 
         public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
@@ -45,7 +42,7 @@ namespace acme_order.Services
             _orders.DeleteOne(order => order.Id == id);
 
 
-        public void Create(string userid, Order orderIn)
+        public OrderCreateResponse Create(string userid, Order orderIn)
         {
             Order order = new Order();
             order.Id = Guid.NewGuid().ToString();
@@ -61,10 +58,11 @@ namespace acme_order.Services
             order.Delivery = orderIn.Delivery;
             order.Card = orderIn.Card;
             order.Cart = orderIn.Cart;
-
-            orderIn.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
-            orderIn.Paid = "pending";
+            
+            _orders.InsertOne(order);
+            
             var transactionId = "pending";
+            
             var paymentLoad = new PaymentLoad
                 (orderIn.Card,
                 orderIn.Firstname,
@@ -72,14 +70,19 @@ namespace acme_order.Services
                 orderIn.Address,
                 orderIn.Total);
             
-            _orders.InsertOne(order);
-            var paymentres = makePayment(paymentLoad);
+            Paymentres paymentres = makePayment(paymentLoad);
 
             if (string.IsNullOrEmpty(order.Id))
             {
-                
+               var orderFound = _orders.Find<Order>(orderDb => orderDb.Id == order.Id).FirstOrDefault();
+               if (!String.Equals(transactionId, paymentres.TransactionId))
+               {
+                   orderFound.Paid = paymentres.TransactionId;
+                   _orders.InsertOne(orderFound);
+               }
             }
-            
+
+            return new OrderCreateResponse(userid, order.Id, paymentres);
         }
 
         private Paymentres makePayment(PaymentLoad paymentLoad)
@@ -107,23 +110,6 @@ namespace acme_order.Services
 
         }
         
-        
-        private struct Paymentres
-        {
-            public Paymentres(string success, string message, string amount, string transactionId)
-            {
-                _success = success;
-                _message = message;
-                _amount = amount;
-                _transactionId = transactionId;
-            }
-
-            private string _success;
-            private string _message;
-            private string _amount;
-            private string _transactionId;
-        }
-        
         private static string RandomString()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -132,7 +118,4 @@ namespace acme_order.Services
         }
         
     }
-
-
-    
 }
