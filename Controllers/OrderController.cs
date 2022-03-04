@@ -2,6 +2,7 @@ using acme_order.Models;
 using acme_order.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using acme_order.Response;
 
 namespace acme_order.Controllers
 {
@@ -38,7 +39,7 @@ namespace acme_order.Controllers
         {
             _orderService.Create(order);
 
-            return CreatedAtRoute("GetOrder", new {id = order.Id.ToString()}, order);
+            return CreatedAtRoute("GetOrder", new {id = order.Id}, order);
         }
 
         [HttpPut("{id:length(24)}")]
@@ -72,11 +73,9 @@ namespace acme_order.Controllers
         }
 
         [HttpPost("add/{userid:length(24)}", Name = "CreateOrder")]
-        public ActionResult<Order> Create(string userid, Order orderIn)
+        public ActionResult<OrderCreateResponse> Create(string userid, Order orderIn)
         {
-            _orderService.Create(userid, orderIn);
-
-            return NoContent();
+            return _orderService.Create(userid, orderIn);
         }
     }
 }

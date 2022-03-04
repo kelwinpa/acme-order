@@ -12,7 +12,7 @@ namespace acme_order.Services
     {
         private readonly IMongoCollection<Order> _orders;
 
-        private static Random random = new Random();
+        private static readonly Random Random = new Random();
 
         public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
         {
@@ -45,7 +45,6 @@ namespace acme_order.Services
         public OrderCreateResponse Create(string userid, Order orderIn)
         {
             Order order = new Order();
-            order.Id = Guid.NewGuid().ToString();
             order.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
             order.Paid = "pending";
             order.Userid = userid;
@@ -72,13 +71,14 @@ namespace acme_order.Services
 
             Paymentres paymentres = makePayment(paymentLoad);
 
-            if (string.IsNullOrEmpty(order.Id))
+            if (!string.IsNullOrEmpty(order.Id))
             {
                 var orderFound = _orders.Find<Order>(orderDb => orderDb.Id == order.Id).FirstOrDefault();
                 if (!String.Equals(transactionId, paymentres.TransactionId))
                 {
                     orderFound.Paid = paymentres.TransactionId;
-                    _orders.InsertOne(orderFound);
+                    
+                    _orders.ReplaceOne(orderToReplace => orderToReplace.Id == orderFound.Id, orderFound);
                 }
             }
 
@@ -113,7 +113,7 @@ namespace acme_order.Services
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, 16)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+                .Select(s => s[Random.Next(s.Length)]).ToArray());
         }
     }
 }
