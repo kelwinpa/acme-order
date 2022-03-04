@@ -20,47 +20,26 @@ namespace acme_order.Services
             _orders = database.GetCollection<Order>(settings.OrdersCollectionName);
         }
 
-        public List<Order> Get() =>
-            _orders.Find(order => true).ToList();
-
-        public Order Get(string id) =>
-            _orders.Find<Order>(order => order.Id == id).FirstOrDefault();
-
-        public Order Create(Order order)
-        {
-            _orders.InsertOne(order);
-            return order;
-        }
-
-        public void Update(string id, Order orderIn) =>
-            _orders.ReplaceOne(order => order.Id == id, orderIn);
-
-        public void Remove(Order orderIn) =>
-            _orders.DeleteOne(order => order.Id == orderIn.Id);
-
-        public void Remove(string id) =>
-            _orders.DeleteOne(order => order.Id == id);
-
-
         public OrderCreateResponse Create(string userid, Order orderIn)
         {
-            Order order = new Order();
-            order.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
-            order.Paid = "pending";
-            order.Userid = userid;
-
-            order.Firstname = orderIn.Firstname;
-            order.Lastname = orderIn.Lastname;
-            order.Total = orderIn.Total;
-            order.Address = orderIn.Address;
-            order.Email = orderIn.Email;
-            order.Delivery = orderIn.Delivery;
-            order.Card = orderIn.Card;
-            order.Cart = orderIn.Cart;
+            Order order = new Order
+            {
+                Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture),
+                Paid = "pending",
+                Userid = userid,
+                Firstname = orderIn.Firstname,
+                Lastname = orderIn.Lastname,
+                Total = orderIn.Total,
+                Address = orderIn.Address,
+                Email = orderIn.Email,
+                Delivery = orderIn.Delivery,
+                Card = orderIn.Card,
+                Cart = orderIn.Cart
+            };
 
             _orders.InsertOne(order);
 
-            var transactionId = "pending";
+            const string transactionId = "pending";
 
             var paymentLoad = new PaymentLoad
             (orderIn.Card,
@@ -73,17 +52,24 @@ namespace acme_order.Services
 
             if (!string.IsNullOrEmpty(order.Id))
             {
-                var orderFound = _orders.Find<Order>(orderDb => orderDb.Id == order.Id).FirstOrDefault();
-                if (!String.Equals(transactionId, paymentres.TransactionId))
+                var orderFound = _orders.Find(orderDb => orderDb.Id == order.Id).FirstOrDefault();
+                if (!string.Equals(transactionId, paymentres.TransactionId))
                 {
                     orderFound.Paid = paymentres.TransactionId;
-                    
-                    _orders.ReplaceOne(orderToReplace => orderToReplace.Id == orderFound.Id, orderFound);
+                    Update(orderFound.Id, orderFound);
                 }
             }
-
             return new OrderCreateResponse(userid, order.Id, paymentres);
         }
+
+        public List<Order> Get() =>
+            _orders.Find(order => true).ToList();
+
+        public Order Get(string id) =>
+            _orders.Find(order => order.Id == id).FirstOrDefault();
+
+        private void Update(string id, Order orderIn) =>
+            _orders.ReplaceOne(order => order.Id == id, orderIn);
 
         private Paymentres makePayment(PaymentLoad paymentLoad)
         {
@@ -93,7 +79,7 @@ namespace acme_order.Services
 
         private struct PaymentLoad
         {
-            public PaymentLoad(string card, string firstname, string lastname, string address, string total)
+            public PaymentLoad(Card card, string firstname, string lastname, Address address, string total)
             {
                 _card = card;
                 _firstname = firstname;
@@ -102,10 +88,10 @@ namespace acme_order.Services
                 Total = total;
             }
 
-            private string _card;
+            private Card _card;
             private string _firstname;
             private string _lastname;
-            private string _address;
+            private Address _address;
             public string Total { get; }
         }
 

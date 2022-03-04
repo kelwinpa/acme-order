@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -15,10 +16,10 @@ namespace acme_order.Models
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public string Total { get; set; }
-        public string Address { get; set; }
+        public Address Address { get; set; }
         public string Email { get; set; }
         public string Delivery { get; set; }
-        public string Card { get; set; }
-        public string Cart { get; set; }
+        public Card Card { get; set; }
+        public List<Cart> Cart { get; set; }
     }
 }
