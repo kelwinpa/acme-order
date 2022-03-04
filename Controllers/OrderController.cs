@@ -38,7 +38,7 @@ namespace acme_order.Controllers
         {
             _orderService.Create(order);
 
-            return CreatedAtRoute("GetOrder", new { id = order.Id.ToString() }, order);
+            return CreatedAtRoute("GetOrder", new {id = order.Id.ToString()}, order);
         }
 
         [HttpPut("{id:length(24)}")]
@@ -70,14 +70,13 @@ namespace acme_order.Controllers
 
             return NoContent();
         }
-    
+
         [HttpPost("add/{userid:length(24)}", Name = "CreateOrder")]
         public ActionResult<Order> Create(string userid, Order orderIn)
         {
             _orderService.Create(userid, orderIn);
-            
+
             return NoContent();
         }
     }
-
 }

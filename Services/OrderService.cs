@@ -49,7 +49,7 @@ namespace acme_order.Services
             order.Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture);
             order.Paid = "pending";
             order.Userid = userid;
-            
+
             order.Firstname = orderIn.Firstname;
             order.Lastname = orderIn.Lastname;
             order.Total = orderIn.Total;
@@ -58,28 +58,28 @@ namespace acme_order.Services
             order.Delivery = orderIn.Delivery;
             order.Card = orderIn.Card;
             order.Cart = orderIn.Cart;
-            
+
             _orders.InsertOne(order);
-            
+
             var transactionId = "pending";
-            
+
             var paymentLoad = new PaymentLoad
-                (orderIn.Card,
+            (orderIn.Card,
                 orderIn.Firstname,
                 orderIn.Lastname,
                 orderIn.Address,
                 orderIn.Total);
-            
+
             Paymentres paymentres = makePayment(paymentLoad);
 
             if (string.IsNullOrEmpty(order.Id))
             {
-               var orderFound = _orders.Find<Order>(orderDb => orderDb.Id == order.Id).FirstOrDefault();
-               if (!String.Equals(transactionId, paymentres.TransactionId))
-               {
-                   orderFound.Paid = paymentres.TransactionId;
-                   _orders.InsertOne(orderFound);
-               }
+                var orderFound = _orders.Find<Order>(orderDb => orderDb.Id == order.Id).FirstOrDefault();
+                if (!String.Equals(transactionId, paymentres.TransactionId))
+                {
+                    orderFound.Paid = paymentres.TransactionId;
+                    _orders.InsertOne(orderFound);
+                }
             }
 
             return new OrderCreateResponse(userid, order.Id, paymentres);
@@ -88,9 +88,9 @@ namespace acme_order.Services
         private Paymentres makePayment(PaymentLoad paymentLoad)
         {
             var transactionId = RandomString();
-            return new Paymentres("true", "payment successfully",paymentLoad.Total,transactionId);
+            return new Paymentres("true", "payment successfully", paymentLoad.Total, transactionId);
         }
-        
+
         private struct PaymentLoad
         {
             public PaymentLoad(string card, string firstname, string lastname, string address, string total)
@@ -106,16 +106,14 @@ namespace acme_order.Services
             private string _firstname;
             private string _lastname;
             private string _address;
-            public string Total{ get; }
-
+            public string Total { get; }
         }
-        
+
         private static string RandomString()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, 16)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
-        
     }
 }
