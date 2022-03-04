@@ -7,9 +7,9 @@ namespace acme_order.Response
     public class OrderCreateResponse
     {
         [JsonPropertyName("userid")]
-        public String UserId { get; set; }
+        public string UserId { get; set; }
         [JsonPropertyName("order_id")]
-        public String OrderId { get; set; }
+        public string OrderId { get; set; }
         public Payment Payment { get; set; }
     }
 }

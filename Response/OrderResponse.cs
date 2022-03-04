@@ -1,25 +1,18 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+using acme_order.Models;
 
-namespace acme_order.Models
+namespace acme_order.Response
 {
-    public class Order 
+    public class OrderResponse
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
-        public string Date { get; set; }
-        public string Paid { get; set; }
         public string Userid { get; set; }
         public string Firstname { get; set; }
         public string Lastname { get; set; }
-        public string Total { get; set; }
         public Address Address { get; set; }
         public string Email { get; set; }
         public string Delivery { get; set; }
         public Card Card { get; set; }
         public List<Cart> Cart { get; set; }
+        public string Total { get; set; }
     }
 }

@@ -24,11 +24,11 @@ namespace acme_order.Controllers
         }
 
         [HttpGet("all")]
-        public ActionResult<List<Order>> Get() =>
+        public ActionResult<List<OrderResponse>> Get() =>
             _orderService.Get();
 
         [HttpGet("{userId:length(24)}", Name = "GetOrderByUser")]
-        public ActionResult<List<Order>> Get(string userId)
+        public ActionResult<List<OrderResponse>> Get(string userId)
         {
             var orderList = _orderService.Get(userId);
 

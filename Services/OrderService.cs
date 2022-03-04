@@ -22,7 +22,7 @@ namespace acme_order.Services
 
         public OrderCreateResponse Create(string userid, Order orderIn)
         {
-            Order order = new Order
+            var order = new Order
             {
                 Date = DateTime.UtcNow.ToString(CultureInfo.CurrentCulture),
                 Paid = "pending",
@@ -48,42 +48,49 @@ namespace acme_order.Services
                 orderIn.Address,
                 orderIn.Total);
 
-            Payment payment = makePayment(paymentLoad);
+            var payment = MakePayment(paymentLoad);
 
-            OrderCreateResponse response = new OrderCreateResponse();
+            var response = new OrderCreateResponse();
             if (!string.IsNullOrEmpty(order.Id))
             {
                 var orderFound = _orders.Find(orderDb => orderDb.Id == order.Id).FirstOrDefault();
-                if (!string.Equals(transactionId, payment.TransactionId))
-                {
-                    orderFound.Paid = payment.TransactionId;
-                    Update(orderFound.Id, orderFound);
-                    response.UserId = userid;
-                    response.OrderId = orderFound.Id;
-                    response.Payment = payment;
-                }
+                if (string.Equals(transactionId, payment.TransactionId)) return response;
+                orderFound.Paid = payment.TransactionId;
+                Update(orderFound.Id, orderFound);
+                response.UserId = userid;
+                response.OrderId = orderFound.Id;
+                response.Payment = payment;
             }
 
             return response;
         }
 
-        public List<Order> Get() =>
-            _orders.Find(order => true).ToList();
-        
-        public List<Order> Get(string userId) =>
-            _orders.Find(order => order.Userid == userId).ToList();
+        public List<OrderResponse> Get()
+        {
+            var orderList = _orders.Find(order => true).ToList();
+
+            return FromOrderToOrderResponse(orderList);
+        }
+
+        public List<OrderResponse> Get(string userId)
+        {
+            var orderList = _orders.Find(order => order.Userid == userId).ToList();
+
+            return FromOrderToOrderResponse(orderList);
+        }
 
         private void Update(string id, Order orderIn) =>
             _orders.ReplaceOne(order => order.Id == id, orderIn);
 
-        private Payment makePayment(PaymentLoad paymentLoad)
+        private static Payment MakePayment(PaymentLoad paymentLoad)
         {
-            Payment payment = new Payment();
-            payment.Success = "true";
-            payment.Message = "Payment processed";
-            payment.Amount = paymentLoad.Total;
-            payment.TransactionId = RandomTransactionId();
-            return payment;
+            return new Payment
+            {
+                Success = "true",
+                Message = "Payment processed",
+                Amount = paymentLoad.Total,
+                TransactionId = RandomTransactionId()
+            };
         }
 
         private struct PaymentLoad
@@ -109,6 +116,23 @@ namespace acme_order.Services
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, 16)
                 .Select(s => s[Random.Next(s.Length)]).ToArray());
+        }
+
+        private static List<OrderResponse> FromOrderToOrderResponse(List<Order> orderList)
+        {
+            return orderList.Select(order =>
+                new OrderResponse
+                {
+                    Userid = order.Userid,
+                    Firstname = order.Firstname,
+                    Lastname = order.Lastname,
+                    Address = order.Address,
+                    Email = order.Email,
+                    Delivery = order.Delivery,
+                    Card = order.Card,
+                    Cart = order.Cart,
+                    Total = order.Total
+                }).ToList();
         }
     }
 }
