@@ -27,16 +27,16 @@ namespace acme_order.Controllers
         public ActionResult<List<Order>> Get() =>
             _orderService.Get();
 
-        [HttpGet("{id:length(24)}", Name = "GetOrder")]
-        public ActionResult<Order> Get(string id)
+        [HttpGet("{userId:length(24)}", Name = "GetOrderByUser")]
+        public ActionResult<List<Order>> Get(string userId)
         {
-            var order = _orderService.Get(id);
+            var orderList = _orderService.Get(userId);
 
-            if (order == null)
+            if (orderList == null || orderList.Count == 0)
             {
                 return NotFound();
             }
-            return order;
+            return orderList;
         }
     }
 }

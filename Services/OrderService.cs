@@ -48,33 +48,42 @@ namespace acme_order.Services
                 orderIn.Address,
                 orderIn.Total);
 
-            Paymentres paymentres = makePayment(paymentLoad);
+            Payment payment = makePayment(paymentLoad);
 
+            OrderCreateResponse response = new OrderCreateResponse();
             if (!string.IsNullOrEmpty(order.Id))
             {
                 var orderFound = _orders.Find(orderDb => orderDb.Id == order.Id).FirstOrDefault();
-                if (!string.Equals(transactionId, paymentres.TransactionId))
+                if (!string.Equals(transactionId, payment.TransactionId))
                 {
-                    orderFound.Paid = paymentres.TransactionId;
+                    orderFound.Paid = payment.TransactionId;
                     Update(orderFound.Id, orderFound);
+                    response.UserId = userid;
+                    response.OrderId = orderFound.Id;
+                    response.Payment = payment;
                 }
             }
-            return new OrderCreateResponse(userid, order.Id, paymentres);
+
+            return response;
         }
 
         public List<Order> Get() =>
             _orders.Find(order => true).ToList();
-
-        public Order Get(string id) =>
-            _orders.Find(order => order.Id == id).FirstOrDefault();
+        
+        public List<Order> Get(string userId) =>
+            _orders.Find(order => order.Userid == userId).ToList();
 
         private void Update(string id, Order orderIn) =>
             _orders.ReplaceOne(order => order.Id == id, orderIn);
 
-        private Paymentres makePayment(PaymentLoad paymentLoad)
+        private Payment makePayment(PaymentLoad paymentLoad)
         {
-            var transactionId = RandomString();
-            return new Paymentres("true", "payment successfully", paymentLoad.Total, transactionId);
+            Payment payment = new Payment();
+            payment.Success = "true";
+            payment.Message = "Payment processed";
+            payment.Amount = paymentLoad.Total;
+            payment.TransactionId = RandomTransactionId();
+            return payment;
         }
 
         private struct PaymentLoad
@@ -95,7 +104,7 @@ namespace acme_order.Services
             public string Total { get; }
         }
 
-        private static string RandomString()
+        private static string RandomTransactionId()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, 16)
