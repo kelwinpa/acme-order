@@ -23,7 +23,7 @@ namespace acme_order.Controllers
             return _orderService.Create(userid, orderIn);
         }
 
-        [HttpGet("/all")]
+        [HttpGet("all")]
         public ActionResult<List<Order>> Get() =>
             _orderService.Get();
 
