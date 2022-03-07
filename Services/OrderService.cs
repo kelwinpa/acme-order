@@ -1,18 +1,22 @@
 using System;
-using acme_order.Models;
-using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using acme_order.Models;
+using acme_order.Request;
 using acme_order.Response;
+using MongoDB.Driver;
+using Newtonsoft.Json;
 
 namespace acme_order.Services
 {
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orders;
-
-        private static readonly Random Random = new Random();
 
         public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
         {
@@ -41,26 +45,18 @@ namespace acme_order.Services
 
             const string transactionId = "pending";
 
-            var paymentLoad = new PaymentLoad
-            (orderIn.Card,
-                orderIn.Firstname,
-                orderIn.Lastname,
-                orderIn.Address,
-                orderIn.Total);
-
-            var payment = MakePayment(paymentLoad);
+            var paymentResult = MakePayment(orderIn.Total, order.Card);
+            var payment = paymentResult.Result;
 
             var response = new OrderCreateResponse();
-            if (!string.IsNullOrEmpty(order.Id))
-            {
-                var orderFound = _orders.Find(orderDb => orderDb.Id == order.Id).FirstOrDefault();
-                if (string.Equals(transactionId, payment.TransactionId)) return response;
-                orderFound.Paid = payment.TransactionId;
-                Update(orderFound.Id, orderFound);
-                response.UserId = userid;
-                response.OrderId = orderFound.Id;
-                response.Payment = payment;
-            }
+            if (string.IsNullOrEmpty(order.Id)) return response;
+            var orderFound = _orders.Find(orderDb => orderDb.Id == order.Id).FirstOrDefault();
+            if (string.Equals(transactionId, payment.TransactionId)) return response;
+            orderFound.Paid = payment.TransactionId;
+            Update(orderFound.Id, orderFound);
+            response.UserId = userid;
+            response.OrderId = orderFound.Id;
+            response.Payment = payment;
 
             return response;
         }
@@ -82,43 +78,48 @@ namespace acme_order.Services
         private void Update(string id, Order orderIn) =>
             _orders.ReplaceOne(order => order.Id == id, orderIn);
 
-        private static Payment MakePayment(PaymentLoad paymentLoad)
+        private async Task<Payment> MakePayment(string total, Card card)
         {
-            return new Payment
-            {
-                Success = "true",
-                Message = "Payment processed",
-                Amount = paymentLoad.Total,
-                TransactionId = RandomTransactionId()
-            };
+            var paymentRequest = new PaymentRequest()
+                {
+                    Card = new CardRequest()
+                    {
+                        Number = card.Number,
+                        ExpMonth = card.ExpMonth,
+                        ExpYear = card.ExpYear,
+                        Ccv = card.Ccv
+                    },
+                    Total = total
+                }
+                ;
+
+            var json = JsonConvert.SerializeObject(paymentRequest);
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+
+            const string url = "http://localhost:9000/pay";
+            using var client = new HttpClient();
+
+            var response = await client.PostAsync(url, data);
+
+            if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.Unauthorized &&
+                response.StatusCode != HttpStatusCode.BadRequest &&
+                response.StatusCode != HttpStatusCode.PaymentRequired) return new Payment();
+
+            var result = response.Content.ReadAsStringAsync().Result;
+            var obj = JsonConvert.DeserializeObject<Payment>(result);
+
+            if (obj != null)
+                return new Payment
+                {
+                    Success = obj.Success,
+                    Message = obj.Message,
+                    Amount = obj.Amount,
+                    TransactionId = obj.TransactionId
+                };
+            return new Payment();
         }
 
-        private struct PaymentLoad
-        {
-            public PaymentLoad(Card card, string firstname, string lastname, Address address, string total)
-            {
-                _card = card;
-                _firstname = firstname;
-                _lastname = lastname;
-                _address = address;
-                Total = total;
-            }
-
-            private Card _card;
-            private string _firstname;
-            private string _lastname;
-            private Address _address;
-            public string Total { get; }
-        }
-
-        private static string RandomTransactionId()
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, 16)
-                .Select(s => s[Random.Next(s.Length)]).ToArray());
-        }
-
-        private static List<OrderResponse> FromOrderToOrderResponse(List<Order> orderList)
+        private static List<OrderResponse> FromOrderToOrderResponse(IEnumerable<Order> orderList)
         {
             return orderList.Select(order =>
                 new OrderResponse

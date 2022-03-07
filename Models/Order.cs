@@ -1,15 +1,15 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace acme_order.Models
 {
-    public class Order 
+    public class Order
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
+
         public string Date { get; set; }
         public string Paid { get; set; }
         public string Userid { get; set; }
