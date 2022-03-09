@@ -78,7 +78,7 @@ namespace acme_order.Services
         private void Update(string id, Order orderIn) =>
             _orders.ReplaceOne(order => order.Id == id, orderIn);
 
-        private async Task<Payment> MakePayment(string total, Card card)
+        private static async Task<Payment> MakePayment(string total, Card card)
         {
             var paymentRequest = new PaymentRequest()
                 {

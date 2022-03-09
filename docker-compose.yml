@@ -1,6 +1,18 @@
 version: '3.7'
 services:
-  mongodb_container:
+#  acme-order:
+#    container_name: acme-order
+#    image: acme-order
+#    restart: always
+#    depends_on:
+#      - "mongodb"
+#    build: .
+#    ports:
+#      - "80:80"
+#    links:
+#      - mongodb 
+  mongodb:
+    container_name: acme-order-mongodb
     image: mongo:4.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: root

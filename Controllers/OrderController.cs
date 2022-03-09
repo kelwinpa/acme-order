@@ -2,10 +2,13 @@ using acme_order.Models;
 using acme_order.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using acme_order.Auth;
 using acme_order.Response;
+using Microsoft.AspNetCore.Authorization;
 
 namespace acme_order.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class OrderController : ControllerBase
@@ -24,6 +27,7 @@ namespace acme_order.Controllers
         }
 
         [HttpGet("all")]
+        [ServiceFilter(typeof(AuthorizeResource))]
         public ActionResult<List<OrderResponse>> Get() =>
             _orderService.Get();
 
