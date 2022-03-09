@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Authentication;
 using System.Text;
-using System.Threading.Tasks;
+using acme_order.Request;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
 
@@ -13,7 +13,7 @@ namespace acme_order.Auth
     {
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
@@ -23,17 +23,21 @@ namespace acme_order.Auth
 
             if (!headers.Keys.Any(x => x.Equals(accessTokenKey))) throw new AuthenticationException();
             var accessToken = headers[accessTokenKey];
-            accessToken = accessToken.ToString().Replace("Bearer ","");
-
-
-            if (!string.IsNullOrEmpty(accessToken)) throw new AuthenticationException();
+            accessToken = accessToken.ToString().Replace("Bearer ", "");
+            
+            if (string.IsNullOrEmpty(accessToken)) throw new AuthenticationException();
             VerifyToken(accessToken);
         }
 
 
         private static async void VerifyToken(string accessToken)
         {
-            var json = JsonConvert.SerializeObject(new TokenRequest(accessToken));
+            var tokenRequest = new TokenRequest
+            {
+                AccessToken = accessToken
+            };
+
+            var json = JsonConvert.SerializeObject(tokenRequest);
             var data = new StringContent(json, Encoding.UTF8, "application/json");
 
             const string url = "http://localhost:8083/verify-token";
@@ -45,17 +49,6 @@ namespace acme_order.Auth
             {
                 throw new AuthenticationException();
             }
-        }
-
-
-        private struct TokenRequest
-        {
-            public TokenRequest(string accessToken)
-            {
-                _accessToken = accessToken;
-            }
-
-            private string _accessToken;
         }
     }
 }
