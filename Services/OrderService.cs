@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using acme_order.Configuration;
 using acme_order.Models;
 using acme_order.Request;
 using acme_order.Response;
@@ -17,11 +18,13 @@ namespace acme_order.Services
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orders;
+        private static IAcmeServiceSettings _acmeServiceSettings;
 
-        public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings settings)
+        public OrderService(IMongoClient mongoClient, IOrderDatabaseSettings dbSettings, IAcmeServiceSettings acmeServiceSettings)
         {
-            var database = mongoClient.GetDatabase(settings.DatabaseName);
-            _orders = database.GetCollection<Order>(settings.OrdersCollectionName);
+            var database = mongoClient.GetDatabase(dbSettings.DatabaseName);
+            _orders = database.GetCollection<Order>(dbSettings.OrdersCollectionName);
+            _acmeServiceSettings = acmeServiceSettings;
         }
 
         public OrderCreateResponse Create(string userid, Order orderIn)
@@ -95,8 +98,8 @@ namespace acme_order.Services
 
             var json = JsonConvert.SerializeObject(paymentRequest);
             var data = new StringContent(json, Encoding.UTF8, "application/json");
-
-            const string url = "http://localhost:9000/pay";
+            var url = $"{_acmeServiceSettings.PaymentServiceUrl}/pay";
+            
             using var client = new HttpClient();
 
             var response = await client.PostAsync(url, data);

@@ -1,5 +1,7 @@
-using System.IdentityModel.Tokens.Jwt;
 using acme_order.Auth;
+using acme_order.Configuration;
+using acme_order.Models;
+using acme_order.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -7,11 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Steeltoe.Connector.MongoDb;
-using acme_order.Models;
-using acme_order.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 
 namespace acme_order
 {
@@ -35,6 +32,12 @@ namespace acme_order
 
             services.AddSingleton<IOrderDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<OrderDatabaseSettings>>().Value);
+
+            services.Configure<AcmeServiceSettings>(
+                Configuration.GetSection(nameof(AcmeServiceSettings)));
+
+            services.AddSingleton<IAcmeServiceSettings>(sp =>
+                sp.GetRequiredService<IOptions<AcmeServiceSettings>>().Value);
 
             services.AddSingleton<OrderService>();
             services.AddControllers();
