@@ -1,0 +1,12 @@
+[
+  {
+    "predicates": [
+      "Path=/order/add/{userId}",
+      "Method=POST"
+    ],
+    "filters": ["StripPrefix=0"],
+    "tags": ["order"],
+    "title": "Create an order.",
+    "description": "Creates an order for the user."
+  }
+]
